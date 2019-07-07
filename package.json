@@ -1,0 +1,23 @@
+{
+  "name": "phrase-cli",
+  "version": "0.1.0",
+  "description": "Poor main's phrase app using Google Sheets",
+  "main": false,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustComments/phrase-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JustComments/phrase-cli/issues"
+  },
+  "homepage": "https://github.com/JustComments/phrase-cli#readme",
+  "dependencies": {
+    "googleapis": "40.0.1"
+  }
+}
