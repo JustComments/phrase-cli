@@ -8,6 +8,7 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
+const WITH_FORMULA = false;
 const SPREADSHEET_ID = '1nf8JS4YqphnWH-fBBlSMCmq18OC4HsTA7bOJ5nlNjDY';
 const TOKEN_PATH = path.join(process.env.HOME, 'gtoken.json');
 const CREDS_PATH = path.join(process.env.HOME, 'gcredentials.json');
@@ -122,7 +123,14 @@ async function exportToGoogleSheet(auth) {
       ...Object.keys(enLocale)
         .sort()
         .map((key) => {
-          return [key, enLocale[key], l.translations[key]];
+          return [
+            key,
+            enLocale[key],
+            l.translations[key] ||
+              (WITH_FORMULA
+                ? `=GOOGLETRANSLATE(indirect("B" & row()),"en", "${l.locale}")`
+                : ''),
+          ];
         }),
     ]);
     await autoResize(sheets, sheetId);
@@ -178,11 +186,17 @@ async function writeData(sheets, sheetId, data) {
             rows: data.map((row) => {
               return {
                 values: row.map((r) => {
-                  return {
-                    userEnteredValue: {
-                      stringValue: r,
-                    },
-                  };
+                  return r.startsWith('=')
+                    ? {
+                        userEnteredValue: {
+                          formulaValue: r,
+                        },
+                      }
+                    : {
+                        userEnteredValue: {
+                          stringValue: r,
+                        },
+                      };
                 }),
               };
             }),
@@ -211,5 +225,30 @@ async function autoResize(sheets, sheetId) {
   });
 }
 
+async function importFromGoogleSheet(auth) {
+  const sheets = google.sheets({ version: 'v4', auth });
+  const { bundles } = require(path.resolve('./src/locales/index.js'));
+  const noEnLocales = Object.keys(bundles).filter((l) => l !== 'en');
+
+  for (var locale of noEnLocales) {
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${locale}!A2:C100`,
+    });
+
+    const rows = result.data.values;
+
+    const keys = {};
+    rows.forEach((row) => {
+      keys[row[0]] = row[2] || '';
+    });
+
+    const str = `module.exports = ${JSON.stringify(keys, null, 2)};`;
+
+    fs.writeFileSync(`./src/locales/${locale}.js`, str, 'utf8');
+  }
+}
+
 exports.run = run;
 exports.exportToGoogleSheet = exportToGoogleSheet;
+exports.importFromGoogleSheet = importFromGoogleSheet;
