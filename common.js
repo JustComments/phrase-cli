@@ -8,7 +8,7 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-const WITH_FORMULA = false;
+const WITH_FORMULA = true;
 const SPREADSHEET_ID = '1nf8JS4YqphnWH-fBBlSMCmq18OC4HsTA7bOJ5nlNjDY';
 const TOKEN_PATH = path.join(process.env.HOME, 'gtoken.json');
 const CREDS_PATH = path.join(process.env.HOME, 'gcredentials.json');
@@ -130,6 +130,7 @@ async function exportToGoogleSheet(auth) {
               (WITH_FORMULA
                 ? `=GOOGLETRANSLATE(indirect("B" & row()),"en", "${l.locale}")`
                 : ''),
+            ...(WITH_FORMULA && !l.translations[key] ? ['auto translation'] : []),
           ];
         }),
     ]);
